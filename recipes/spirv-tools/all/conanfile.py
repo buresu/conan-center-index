@@ -59,7 +59,9 @@ class SpirvtoolsConan(ConanFile):
         check_min_cppstd(self, 11)
 
     def build_requirements(self):
-        if Version(self.version) >= "1.3.239":
+        if Version(self.version) >= "1.4.363.0":
+            self.tool_requires("cmake/[>=3.22.1]")
+        elif Version(self.version) >= "1.3.239":
             self.tool_requires("cmake/[>=3.17.2]")
 
     def source(self):

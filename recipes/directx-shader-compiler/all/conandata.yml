@@ -1,0 +1,12 @@
+sources:
+  "1.9.2609":
+    url: "https://github.com/microsoft/DirectXShaderCompiler/archive/refs/tags/v1.9.2609.tar.gz"
+    sha256: "05b8e9622f9b147156998e6aab38d71997ec8391038e7302c703e9ca2448dfed"
+patches:
+  "1.9.2609":
+    - patch_file: "patches/0001-use-conan-dependencies.patch"
+      patch_description: "Use packaged SPIRV-Tools and install the Windows import library"
+      patch_type: "conan"
+    - patch_file: "patches/0002-directx-headers-rpc-compat.patch"
+      patch_description: "Keep DXC WinAdapter types when using recent DirectX-Headers on Linux"
+      patch_type: "conan"

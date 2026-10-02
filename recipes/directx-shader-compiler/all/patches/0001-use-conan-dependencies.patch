@@ -1,0 +1,85 @@
+--- a/external/CMakeLists.txt
++++ b/external/CMakeLists.txt
+@@ -18,58 +18,3 @@
+   endif (NOT WIN32)
+ endif(NOT DIRECTX_HEADER_INCLUDE_DIR)
+ 
+-# Enabling SPIR-V codegen requires SPIRV-Headers for spirv.hpp and
+-# SPIRV-Tools for SPIR-V disassembling functionality.
+-if (${ENABLE_SPIRV_CODEGEN})
+-  set(DXC_SPIRV_HEADERS_DIR "${DXC_EXTERNAL_ROOT_DIR}/SPIRV-Headers"
+-      CACHE STRING "Location of SPIRV-Headers source")
+-  set(DXC_SPIRV_TOOLS_DIR "${DXC_EXTERNAL_ROOT_DIR}/SPIRV-Tools"
+-      CACHE STRING "Location of SPIRV-Tools source")
+-
+-  if (NOT DEFINED SPIRV-Headers_SOURCE_DIR)
+-    if (IS_DIRECTORY ${DXC_SPIRV_HEADERS_DIR})
+-      add_subdirectory(${DXC_SPIRV_HEADERS_DIR}
+-          "${CMAKE_BINARY_DIR}/external/SPIRV-Headers"
+-          EXCLUDE_FROM_ALL)
+-    endif()
+-  endif()
+-  if (NOT DEFINED SPIRV-Headers_SOURCE_DIR)
+-    message(FATAL_ERROR "SPIRV-Headers was not found - required for SPIR-V codegen")
+-  else()
+-    set(SPIRV_HEADER_INCLUDE_DIR ${SPIRV-Headers_SOURCE_DIR}/include PARENT_SCOPE)
+-  endif()
+-
+-  if (NOT TARGET SPIRV-Tools)
+-    if (IS_DIRECTORY ${DXC_SPIRV_TOOLS_DIR})
+-      # Avoid implicit fallthrough warning from clang
+-      # This add_compile_options() will only affect the current directory and its subdirectories.
+-      if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+-        add_compile_options(-Wno-implicit-fallthrough)
+-      endif()
+-      # We only need the library from SPIRV-Tools.
+-      set(SPIRV_SKIP_EXECUTABLES ON CACHE BOOL "Skip building SPIRV-Tools executables")
+-      if (NOT HLSL_ENABLE_DEBUG_ITERATORS)
+-        set(SPIRV_TOOLS_EXTRA_DEFINITIONS /D_ITERATOR_DEBUG_LEVEL=0)
+-      endif()
+-      add_subdirectory(${DXC_SPIRV_TOOLS_DIR}
+-          "${CMAKE_BINARY_DIR}/external/SPIRV-Tools"
+-          EXCLUDE_FROM_ALL)
+-    endif()
+-  endif()
+-  if (NOT TARGET SPIRV-Tools)
+-    message(FATAL_ERROR "SPIRV-Tools was not found - required for SPIR-V codegen")
+-  else()
+-    set(SPIRV_TOOLS_INCLUDE_DIR ${spirv-tools_SOURCE_DIR}/include PARENT_SCOPE)
+-  endif()
+-
+-  set(SPIRV_DEP_TARGETS
+-    SPIRV-Tools-static
+-    SPIRV-Tools-opt
+-  )
+-
+-  # Organize these targets better in Visual Studio
+-  foreach(target ${SPIRV_DEP_TARGETS})
+-    set_property(TARGET ${target} PROPERTY FOLDER "External dependencies")
+-  endforeach()
+-
+-endif()
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -679,6 +679,10 @@
+ 
+ add_subdirectory(utils/hct)
+ 
++if(ENABLE_SPIRV_CODEGEN)
++  find_package(SPIRV-Tools REQUIRED CONFIG)
++endif()
++
+ if(EXISTS "${LLVM_MAIN_SRC_DIR}/external")
+   add_subdirectory(external) # SPIRV change
+ endif()
+--- a/tools/clang/tools/dxcompiler/CMakeLists.txt
++++ b/tools/clang/tools/dxcompiler/CMakeLists.txt
+@@ -152,7 +152,7 @@
+   DEFINE_SYMBOL _CINDEX_LIB_)
+ 
+ if (WIN32)
+-  set(install_dest RUNTIME DESTINATION bin)
++  set(install_dest RUNTIME DESTINATION bin COMPONENT dxcompiler ARCHIVE DESTINATION lib)
+ else()
+   set(install_dest LIBRARY DESTINATION lib${LLVM_LIBDIR_SUFFIX})
+ endif()
